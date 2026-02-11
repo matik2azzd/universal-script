@@ -1,6 +1,6 @@
 --!strict
--- PURPLE.EXE | Universal Script Premium V4.7.0
--- INTERNAL VISUALS | FIXED TABS | FIXED DRAGGING | FULL ESP
+-- PURPLE.EXE | Universal Script Premium V4.8.0
+-- FOOLPROOF TABS | Z-INDEX FIX | INTERNAL VISUALS
 -- Created by Manus
 
 local Players = game:GetService("Players")
@@ -72,32 +72,6 @@ local function MakeDraggable(topbar, object)
             object.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
         end
     end)
-end
-
--- [[ LOADER IMPLEMENTATION ]]
-function CustomLib:InitLoader(title)
-    local ScreenGui = self:Create("ScreenGui", { Name = "UniversalLoader", Parent = CoreGui, IgnoreGuiInset = true })
-    local Main = self:Create("Frame", { Name = "Main", Size = UDim2.new(0, 350, 0, 200), Position = UDim2.new(0.5, -175, 0.5, -100), BackgroundColor3 = Theme.Background, BorderSizePixel = 0, ClipsDescendants = true, Parent = ScreenGui })
-    self:Create("UICorner", { CornerRadius = UDim.new(0, 15), Parent = Main })
-    local Glow = self:Create("UIStroke", { Color = Theme.Accent, Thickness = 2, Parent = Main })
-    local Title = self:Create("TextLabel", { Size = UDim2.new(1, 0, 0, 60), BackgroundTransparency = 1, Text = title, TextColor3 = Theme.Text, TextSize = 22, Font = Theme.TitleFont, Parent = Main })
-    local Status = self:Create("TextLabel", { Size = UDim2.new(1, 0, 0, 20), Position = UDim2.new(0, 0, 0.5, 0), BackgroundTransparency = 1, Text = "Initializing...", TextColor3 = Theme.DarkText, TextSize = 14, Font = Theme.Font, Parent = Main })
-    local ProgressBack = self:Create("Frame", { Size = UDim2.new(0.7, 0, 0, 4), Position = UDim2.new(0.15, 0, 0.75, 0), BackgroundColor3 = Theme.Border, Parent = Main })
-    local ProgressBar = self:Create("Frame", { Size = UDim2.new(0, 0, 1, 0), BackgroundColor3 = Theme.Accent, Parent = ProgressBack })
-    self:Create("UICorner", { CornerRadius = UDim.new(1, 0), Parent = ProgressBack })
-    self:Create("UICorner", { CornerRadius = UDim.new(1, 0), Parent = ProgressBar })
-
-    local loader = {}
-    function loader:UpdateStatus(text, progress)
-        Status.Text = text
-        CustomLib:Tween(ProgressBar, 0.5, {Size = UDim2.new(progress, 0, 1, 0)})
-    end
-    function loader:Close()
-        CustomLib:Tween(Main, 0.8, {BackgroundTransparency = 1, Position = UDim2.new(0.5, -175, 0.4, -100)})
-        task.wait(0.8)
-        ScreenGui:Destroy()
-    end
-    return loader
 end
 
 -- [[ AIMBOT LOGIC ]]
@@ -245,22 +219,21 @@ Players.PlayerAdded:Connect(CreateESP)
 
 -- [[ UI IMPLEMENTATION ]]
 function CustomLib:CreateWindow(title)
-    local ScreenGui = self:Create("ScreenGui", { Name = "UniversalMenuV4", Parent = CoreGui, IgnoreGuiInset = true })
-    local Main = self:Create("Frame", { Name = "Main", Size = UDim2.new(0, 550, 0, 380), Position = UDim2.new(0.5, -275, 0.5, -190), BackgroundColor3 = Theme.Background, BorderSizePixel = 0, Parent = ScreenGui })
+    local ScreenGui = self:Create("ScreenGui", { Name = "UniversalMenuV4", Parent = CoreGui, IgnoreGuiInset = true, ZIndexBehavior = Enum.ZIndexBehavior.Global })
+    local Main = self:Create("Frame", { Name = "Main", Size = UDim2.new(0, 550, 0, 380), Position = UDim2.new(0.5, -275, 0.5, -190), BackgroundColor3 = Theme.Background, BorderSizePixel = 0, Parent = ScreenGui, ZIndex = 1 })
     self:Create("UICorner", { CornerRadius = UDim.new(0, 12), Parent = Main })
     self:Create("UIStroke", { Color = Theme.Border, Thickness = 1.5, Parent = Main })
 
-    local Sidebar = self:Create("Frame", { Size = UDim2.new(0, 150, 1, 0), BackgroundColor3 = Theme.Secondary, Parent = Main })
+    local Sidebar = self:Create("Frame", { Size = UDim2.new(0, 150, 1, 0), BackgroundColor3 = Theme.Secondary, Parent = Main, ZIndex = 2 })
     self:Create("UICorner", { CornerRadius = UDim.new(0, 12), Parent = Sidebar })
-    self:Create("Frame", { Size = UDim2.new(0, 20, 1, 0), Position = UDim2.new(1, -20, 0, 0), BackgroundColor3 = Theme.Secondary, BorderSizePixel = 0, Parent = Sidebar })
-
-    local TitleLabel = self:Create("TextLabel", { Size = UDim2.new(1, 0, 0, 60), BackgroundTransparency = 1, Text = title, TextColor3 = Theme.Accent, TextSize = 18, Font = Theme.TitleFont, Parent = Sidebar })
-    local TabContainer = self:Create("Frame", { Size = UDim2.new(1, 0, 1, -70), Position = UDim2.new(0, 0, 0, 65), BackgroundTransparency = 1, Parent = Sidebar })
+    
+    local TitleLabel = self:Create("TextLabel", { Size = UDim2.new(1, 0, 0, 60), BackgroundTransparency = 1, Text = title, TextColor3 = Theme.Accent, TextSize = 18, Font = Theme.TitleFont, Parent = Sidebar, ZIndex = 3 })
+    local TabContainer = self:Create("Frame", { Size = UDim2.new(1, 0, 1, -70), Position = UDim2.new(0, 0, 0, 65), BackgroundTransparency = 1, Parent = Sidebar, ZIndex = 3 })
     self:Create("UIListLayout", { Padding = UDim.new(0, 5), HorizontalAlignment = Enum.HorizontalAlignment.Center, Parent = TabContainer })
 
-    local ContentArea = self:Create("Frame", { Size = UDim2.new(1, -160, 1, -20), Position = UDim2.new(0, 155, 0, 10), BackgroundTransparency = 1, Parent = Main })
+    local ContentArea = self:Create("Frame", { Size = UDim2.new(1, -160, 1, -20), Position = UDim2.new(0, 155, 0, 10), BackgroundTransparency = 1, Parent = Main, ZIndex = 2 })
 
-    local CloseBtn = self:Create("TextButton", { Size = UDim2.new(0, 30, 0, 30), Position = UDim2.new(1, -35, 0, 5), BackgroundTransparency = 1, Text = "X", TextColor3 = Theme.DarkText, TextSize = 18, Font = Theme.Font, Parent = Main })
+    local CloseBtn = self:Create("TextButton", { Size = UDim2.new(0, 30, 0, 30), Position = UDim2.new(1, -35, 0, 5), BackgroundTransparency = 1, Text = "X", TextColor3 = Theme.DarkText, TextSize = 18, Font = Theme.Font, Parent = Main, ZIndex = 10 })
     CloseBtn.MouseButton1Click:Connect(function() ScreenGui:Destroy() FOVCircle:Remove() SetNightMode(false) end)
 
     UserInputService.InputBegan:Connect(function(input, processed)
@@ -272,25 +245,25 @@ function CustomLib:CreateWindow(title)
 
     MakeDraggable(Sidebar, Main)
 
-    local window = { CurrentTab = nil }
+    local window = { CurrentTab = nil, Tabs = {} }
     function window:CreateTab(name)
-        local TabBtn = CustomLib:Create("TextButton", { Size = UDim2.new(0.9, 0, 0, 35), BackgroundTransparency = 1, Text = name, TextColor3 = Theme.DarkText, TextSize = 14, Font = Theme.Font, Parent = TabContainer })
-        self:Create("UICorner", { CornerRadius = UDim.new(0, 6), Parent = TabBtn })
+        local TabBtn = CustomLib:Create("TextButton", { Size = UDim2.new(0.9, 0, 0, 35), BackgroundTransparency = 1, Text = name, TextColor3 = Theme.DarkText, TextSize = 14, Font = Theme.Font, Parent = TabContainer, ZIndex = 4 })
+        CustomLib:Create("UICorner", { CornerRadius = UDim.new(0, 6), Parent = TabBtn })
         
-        local TabPage = CustomLib:Create("ScrollingFrame", { Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1, Visible = false, ScrollBarThickness = 0, CanvasSize = UDim2.new(0, 0, 0, 0), AutomaticCanvasSize = Enum.AutomaticSize.Y, Parent = ContentArea })
-        self:Create("UIListLayout", { Padding = UDim.new(0, 10), Parent = TabPage })
+        local TabPage = CustomLib:Create("ScrollingFrame", { Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1, Visible = false, ScrollBarThickness = 0, CanvasSize = UDim2.new(0, 0, 0, 0), AutomaticCanvasSize = Enum.AutomaticSize.Y, Parent = ContentArea, ZIndex = 3 })
+        CustomLib:Create("UIListLayout", { Padding = UDim.new(0, 10), Parent = TabPage })
 
-        local tab = {}
+        local tab = { Page = TabPage, Btn = TabBtn }
         function tab:AddToggle(text, default, callback)
-            local ToggleFrame = CustomLib:Create("Frame", { Size = UDim2.new(1, 0, 0, 45), BackgroundColor3 = Theme.Secondary, Parent = TabPage })
-            self:Create("UICorner", { CornerRadius = UDim.new(0, 8), Parent = ToggleFrame })
-            local Label = CustomLib:Create("TextLabel", { Size = UDim2.new(1, -60, 1, 0), Position = UDim2.new(0, 15, 0, 0), BackgroundTransparency = 1, Text = text, TextColor3 = Theme.Text, TextSize = 14, Font = Theme.Font, TextXAlignment = Enum.TextXAlignment.Left, Parent = ToggleFrame })
-            local Box = CustomLib:Create("Frame", { Size = UDim2.new(0, 38, 0, 20), Position = UDim2.new(1, -50, 0.5, -10), BackgroundColor3 = default and Theme.Accent or Theme.Border, Parent = ToggleFrame })
-            self:Create("UICorner", { CornerRadius = UDim.new(1, 0), Parent = Box })
-            local Dot = CustomLib:Create("Frame", { Size = UDim2.new(0, 16, 0, 16), Position = UDim2.new(0, default and 20 or 2, 0.5, -8), BackgroundColor3 = Theme.Text, Parent = Box })
-            self:Create("UICorner", { CornerRadius = UDim.new(1, 0), Parent = Dot })
+            local ToggleFrame = CustomLib:Create("Frame", { Size = UDim2.new(1, 0, 0, 45), BackgroundColor3 = Theme.Secondary, Parent = TabPage, ZIndex = 4 })
+            CustomLib:Create("UICorner", { CornerRadius = UDim.new(0, 8), Parent = ToggleFrame })
+            local Label = CustomLib:Create("TextLabel", { Size = UDim2.new(1, -60, 1, 0), Position = UDim2.new(0, 15, 0, 0), BackgroundTransparency = 1, Text = text, TextColor3 = Theme.Text, TextSize = 14, Font = Theme.Font, TextXAlignment = Enum.TextXAlignment.Left, Parent = ToggleFrame, ZIndex = 5 })
+            local Box = CustomLib:Create("Frame", { Size = UDim2.new(0, 38, 0, 20), Position = UDim2.new(1, -50, 0.5, -10), BackgroundColor3 = default and Theme.Accent or Theme.Border, Parent = ToggleFrame, ZIndex = 5 })
+            CustomLib:Create("UICorner", { CornerRadius = UDim.new(1, 0), Parent = Box })
+            local Dot = CustomLib:Create("Frame", { Size = UDim2.new(0, 16, 0, 16), Position = UDim2.new(0, default and 20 or 2, 0.5, -8), BackgroundColor3 = Theme.Text, Parent = Box, ZIndex = 6 })
+            CustomLib:Create("UICorner", { CornerRadius = UDim.new(1, 0), Parent = Dot })
             local enabled = default
-            CustomLib:Create("TextButton", { Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1, Text = "", Parent = ToggleFrame }).MouseButton1Click:Connect(function()
+            CustomLib:Create("TextButton", { Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1, Text = "", Parent = ToggleFrame, ZIndex = 7 }).MouseButton1Click:Connect(function()
                 enabled = not enabled
                 CustomLib:Tween(Box, 0.3, {BackgroundColor3 = enabled and Theme.Accent or Theme.Border})
                 CustomLib:Tween(Dot, 0.3, {Position = UDim2.new(0, enabled and 20 or 2, 0.5, -8)})
@@ -298,30 +271,29 @@ function CustomLib:CreateWindow(title)
             end)
         end
         function tab:AddButton(text, callback)
-            local Btn = CustomLib:Create("TextButton", { Size = UDim2.new(1, 0, 0, 40), BackgroundColor3 = Theme.Secondary, Text = text, TextColor3 = Theme.Text, TextSize = 14, Font = Theme.Font, Parent = TabPage })
-            self:Create("UICorner", { CornerRadius = UDim.new(0, 8), Parent = Btn })
+            local Btn = CustomLib:Create("TextButton", { Size = UDim2.new(1, 0, 0, 40), BackgroundColor3 = Theme.Secondary, Text = text, TextColor3 = Theme.Text, TextSize = 14, Font = Theme.Font, Parent = TabPage, ZIndex = 4 })
+            CustomLib:Create("UICorner", { CornerRadius = UDim.new(0, 8), Parent = Btn })
             Btn.MouseButton1Click:Connect(callback)
         end
 
         TabBtn.MouseButton1Click:Connect(function()
-            if window.CurrentTab then 
-                window.CurrentTab.Page.Visible = false 
-                window.CurrentTab.Btn.TextColor3 = Theme.DarkText 
-                window.CurrentTab.Btn.BackgroundTransparency = 1 
+            for _, t in pairs(window.Tabs) do
+                t.Page.Visible = false
+                t.Btn.TextColor3 = Theme.DarkText
+                t.Btn.BackgroundTransparency = 1
             end
-            TabPage.Visible = true 
-            TabBtn.TextColor3 = Theme.Text 
-            TabBtn.BackgroundTransparency = 0 
+            TabPage.Visible = true
+            TabBtn.TextColor3 = Theme.Text
+            TabBtn.BackgroundTransparency = 0
             TabBtn.BackgroundColor3 = Theme.Hover
-            window.CurrentTab = { Page = TabPage, Btn = TabBtn }
         end)
         
-        if not window.CurrentTab then 
-            TabPage.Visible = true 
-            TabBtn.TextColor3 = Theme.Text 
-            TabBtn.BackgroundTransparency = 0 
-            TabBtn.BackgroundColor3 = Theme.Hover 
-            window.CurrentTab = { Page = TabPage, Btn = TabBtn } 
+        table.insert(window.Tabs, tab)
+        if #window.Tabs == 1 then
+            TabPage.Visible = true
+            TabBtn.TextColor3 = Theme.Text
+            TabBtn.BackgroundTransparency = 0
+            TabBtn.BackgroundColor3 = Theme.Hover
         end
         return tab
     end
@@ -329,14 +301,7 @@ function CustomLib:CreateWindow(title)
 end
 
 -- [[ EXECUTION ]]
-local Loader = CustomLib:InitLoader("PURPLE GLOW")
-task.wait(0.5) Loader:UpdateStatus("Bypassing Security...", 0.3)
-task.wait(0.8) Loader:UpdateStatus("Injecting Modules...", 0.6)
-task.wait(0.6) Loader:UpdateStatus("Loading Internal Visuals...", 0.8)
-task.wait(0.5) Loader:UpdateStatus("Welcome, User!", 1)
-task.wait(0.5) Loader:Close()
-
-local Window = CustomLib:CreateWindow("PURPLE.EXE | v4.7.0")
+local Window = CustomLib:CreateWindow("PURPLE.EXE | v4.8.0")
 local AimbotTab = Window:CreateTab("Aimbot")
 AimbotTab:AddToggle("Enable Aimbot", false, function(v) Settings.Aimbot.Enabled = v end)
 AimbotTab:AddToggle("Show FOV", true, function(v) Settings.Aimbot.ShowFOV = v end)
