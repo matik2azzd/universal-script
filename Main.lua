@@ -1,6 +1,6 @@
 --!strict
--- PURPLE.EXE | Universal Script Premium V4
--- Adjustable Sensitivity | Fixed Menu | Improved Aimbot | Functional ESP
+-- PURPLE.EXE | Universal Script Premium V4.3.0
+-- Animated Loader | Adjustable Sensitivity | Fixed Menu | Improved Aimbot | Functional ESP
 -- Created by Manus
 
 local Players = game:GetService("Players")
@@ -49,6 +49,48 @@ function CustomLib:Create(className, properties)
     return instance
 end
 
+-- [[ LOADER IMPLEMENTATION ]]
+function CustomLib:InitLoader(title)
+    local ScreenGui = self:Create("ScreenGui", { Name = "UniversalLoader", Parent = CoreGui, IgnoreGuiInset = true })
+    local Main = self:Create("Frame", { Name = "Main", Size = UDim2.new(0, 350, 0, 200), Position = UDim2.new(0.5, -175, 0.5, -100), BackgroundColor3 = Theme.Background, BorderSizePixel = 0, ClipsDescendants = true, Parent = ScreenGui })
+    self:Create("UICorner", { CornerRadius = UDim.new(0, 15), Parent = Main })
+    local Glow = self:Create("UIStroke", { Color = Theme.Accent, Thickness = 2, Parent = Main })
+    local Title = self:Create("TextLabel", { Size = UDim2.new(1, 0, 0, 60), BackgroundTransparency = 1, Text = title, TextColor3 = Theme.Text, TextSize = 22, Font = Theme.TitleFont, Parent = Main })
+    local Status = self:Create("TextLabel", { Size = UDim2.new(1, 0, 0, 20), Position = UDim2.new(0, 0, 0.5, 0), BackgroundTransparency = 1, Text = "Initializing...", TextColor3 = Theme.DarkText, TextSize = 14, Font = Theme.Font, Parent = Main })
+    local ProgressBack = self:Create("Frame", { Size = UDim2.new(0.7, 0, 0, 4), Position = UDim2.new(0.15, 0, 0.75, 0), BackgroundColor3 = Theme.Border, Parent = Main })
+    local ProgressBar = self:Create("Frame", { Size = UDim2.new(0, 0, 1, 0), BackgroundColor3 = Theme.Accent, Parent = ProgressBack })
+    self:Create("UICorner", { CornerRadius = UDim.new(1, 0), Parent = ProgressBack })
+    self:Create("UICorner", { CornerRadius = UDim.new(1, 0), Parent = ProgressBar })
+
+    -- Initial Animation
+    Main.BackgroundTransparency = 1
+    Title.TextTransparency = 1
+    Status.TextTransparency = 1
+    ProgressBack.BackgroundTransparency = 1
+    ProgressBar.BackgroundTransparency = 1
+    Glow.Transparency = 1
+    Main.Position = UDim2.new(0.5, -175, 0.6, -100)
+    
+    self:Tween(Main, 1, {BackgroundTransparency = 0, Position = UDim2.new(0.5, -175, 0.5, -100)})
+    self:Tween(Glow, 1, {Transparency = 0})
+    self:Tween(Title, 1, {TextTransparency = 0})
+    self:Tween(Status, 1, {TextTransparency = 0})
+    self:Tween(ProgressBack, 1, {BackgroundTransparency = 0})
+    self:Tween(ProgressBar, 1, {BackgroundTransparency = 0})
+
+    local loader = {}
+    function loader:UpdateStatus(text, progress)
+        Status.Text = text
+        CustomLib:Tween(ProgressBar, 0.5, {Size = UDim2.new(progress, 0, 1, 0)})
+    end
+    function loader:Close()
+        CustomLib:Tween(Main, 0.8, {BackgroundTransparency = 1, Position = UDim2.new(0.5, -175, 0.4, -100)})
+        task.wait(0.8)
+        ScreenGui:Destroy()
+    end
+    return loader
+end
+
 -- [[ AIMBOT LOGIC ]]
 local FOVCircle = Drawing.new("Circle")
 FOVCircle.Thickness = 1
@@ -82,7 +124,6 @@ RunService.RenderStepped:Connect(function()
             local targetPos = Camera:WorldToViewportPoint(target.Character.HumanoidRootPart.Position)
             local mousePos = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
             
-            -- Use the dynamic Smoothness value
             if mousemoverel then
                 mousemoverel((targetPos.X - mousePos.X) * Settings.Aimbot.Smoothness, (targetPos.Y - mousePos.Y) * Settings.Aimbot.Smoothness)
             else
@@ -206,7 +247,14 @@ function CustomLib:CreateWindow(title)
 end
 
 -- [[ EXECUTION ]]
-local Window = CustomLib:CreateWindow("PURPLE.EXE | v4.2.0")
+local Loader = CustomLib:InitLoader("PURPLE GLOW")
+task.wait(0.5) Loader:UpdateStatus("Bypassing Security...", 0.3)
+task.wait(0.8) Loader:UpdateStatus("Injecting Modules...", 0.6)
+task.wait(0.6) Loader:UpdateStatus("Loading Aimbot Engine...", 0.8)
+task.wait(0.5) Loader:UpdateStatus("Welcome, User!", 1)
+task.wait(0.5) Loader:Close()
+
+local Window = CustomLib:CreateWindow("PURPLE.EXE | v4.3.0")
 local AimbotTab = Window:CreateTab("Aimbot")
 AimbotTab:AddToggle("Enable Aimbot", false, function(v) Settings.Aimbot.Enabled = v end)
 AimbotTab:AddToggle("Show FOV", true, function(v) Settings.Aimbot.ShowFOV = v end)
@@ -217,13 +265,7 @@ local currentLevel = 3
 AimbotTab:AddButton("Sensitivity: Medium", function()
     currentLevel = (currentLevel % #SmoothnessLevels) + 1
     Settings.Aimbot.Smoothness = SmoothnessLevels[currentLevel]
-    local label = "Low"
-    if currentLevel > 4 then label = "Insane"
-    elseif currentLevel > 3 then label = "High"
-    elseif currentLevel > 2 then label = "Medium"
-    end
-    -- Note: In a full UI lib, we'd update the button text. Here we'll just print for now.
-    print("Aimbot Sensitivity set to:", label)
+    print("Aimbot Sensitivity set to level:", currentLevel)
 end)
 
 local VisualsTab = Window:CreateTab("Visuals")
