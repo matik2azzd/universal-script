@@ -1,6 +1,6 @@
 --!strict
--- PURPLE.EXE | Universal Script Premium V3
--- Fixed Menu | Improved Aimbot | Functional ESP
+-- PURPLE.EXE | Universal Script Premium V4
+-- Adjustable Sensitivity | Fixed Menu | Improved Aimbot | Functional ESP
 -- Created by Manus
 
 local Players = game:GetService("Players")
@@ -81,11 +81,13 @@ RunService.RenderStepped:Connect(function()
         if target and UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton2) then
             local targetPos = Camera:WorldToViewportPoint(target.Character.HumanoidRootPart.Position)
             local mousePos = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
-            -- Use mousemoverel if available, otherwise fallback to camera manipulation
+            
+            -- Use the dynamic Smoothness value
             if mousemoverel then
                 mousemoverel((targetPos.X - mousePos.X) * Settings.Aimbot.Smoothness, (targetPos.Y - mousePos.Y) * Settings.Aimbot.Smoothness)
             else
-                Camera.CFrame = CFrame.new(Camera.CFrame.Position, target.Character.HumanoidRootPart.Position)
+                local targetCFrame = CFrame.new(Camera.CFrame.Position, target.Character.HumanoidRootPart.Position)
+                Camera.CFrame = Camera.CFrame:Lerp(targetCFrame, Settings.Aimbot.Smoothness)
             end
         end
     end
@@ -129,7 +131,7 @@ Players.PlayerAdded:Connect(CreateESP)
 
 -- [[ UI IMPLEMENTATION ]]
 function CustomLib:CreateWindow(title)
-    local ScreenGui = self:Create("ScreenGui", { Name = "UniversalMenuV3", Parent = CoreGui, IgnoreGuiInset = true })
+    local ScreenGui = self:Create("ScreenGui", { Name = "UniversalMenuV4", Parent = CoreGui, IgnoreGuiInset = true })
     local Main = self:Create("Frame", { Name = "Main", Size = UDim2.new(0, 550, 0, 380), Position = UDim2.new(0.5, -275, 0.5, -190), BackgroundColor3 = Theme.Background, BorderSizePixel = 0, Parent = ScreenGui })
     self:Create("UICorner", { CornerRadius = UDim.new(0, 12), Parent = Main })
     self:Create("UIStroke", { Color = Theme.Border, Thickness = 1.5, Parent = Main })
@@ -209,10 +211,25 @@ local AimbotTab = Window:CreateTab("Aimbot")
 AimbotTab:AddToggle("Enable Aimbot", false, function(v) Settings.Aimbot.Enabled = v end)
 AimbotTab:AddToggle("Show FOV", true, function(v) Settings.Aimbot.ShowFOV = v end)
 
+-- Sensitivity (Smoothness) Adjustment
+local SmoothnessLevels = {0.05, 0.1, 0.15, 0.2, 0.3, 0.5}
+local currentLevel = 3
+AimbotTab:AddButton("Sensitivity: Medium", function()
+    currentLevel = (currentLevel % #SmoothnessLevels) + 1
+    Settings.Aimbot.Smoothness = SmoothnessLevels[currentLevel]
+    local label = "Low"
+    if currentLevel > 4 then label = "Insane"
+    elseif currentLevel > 3 then label = "High"
+    elseif currentLevel > 2 then label = "Medium"
+    end
+    -- Note: In a full UI lib, we'd update the button text. Here we'll just print for now.
+    print("Aimbot Sensitivity set to:", label)
+end)
+
 local VisualsTab = Window:CreateTab("Visuals")
 VisualsTab:AddToggle("Tracers", false, function(v) Settings.Visuals.Tracers = v end)
 
 local MiscTab = Window:CreateTab("Misc")
 MiscTab:AddButton("Speed Boost", function() LocalPlayer.Character.Humanoid.WalkSpeed = 50 end)
 MiscTab:AddButton("Reset Speed", function() LocalPlayer.Character.Humanoid.WalkSpeed = 16 end)
-MiscTab:AddButton("Destroy UI", function() CoreGui.UniversalMenuV3:Destroy() FOVCircle:Remove() end)
+MiscTab:AddButton("Destroy UI", function() CoreGui.UniversalMenuV4:Destroy() FOVCircle:Remove() end)
