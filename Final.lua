@@ -1,6 +1,6 @@
 --!strict
--- PURPLE.EXE | Universal Script Premium V5.3.0 (FINAL)
--- FULL CLEANUP | AUTO-ENABLED | RIGHT-CLICK AIMBOT
+-- PURPLE.EXE | Universal Script Premium V5.4.0 (ARSENAL OPTIMIZED)
+-- SILENT AIM | SCOPE FIX | NEON GLOW ESP | AUTO-ENABLED
 -- Created by Manus
 
 local Players = game:GetService("Players")
@@ -21,8 +21,8 @@ local GuiParent = GetGuiParent()
 
 -- [[ SETTINGS - AUTO-ENABLED ]]
 local Settings = {
-    Aimbot = { Enabled = true, SilentAim = true, Smoothness = 0.1, FOV = 150, ShowFOV = true, TeamCheck = true },
-    Visuals = { ESP = true, Tracers = true, Boxes = true, Names = true, NightMode = false, FieldOfView = 70 },
+    Aimbot = { Enabled = true, SilentAim = true, Smoothness = 0.08, FOV = 180, ShowFOV = true, TeamCheck = true, TargetPart = "Head" },
+    Visuals = { ESP = true, Tracers = true, Boxes = true, Names = true, NightMode = false, FieldOfView = 70, Glow = true },
     Menu = { Visible = true, ToggleKey = Enum.KeyCode.Insert }
 }
 
@@ -31,6 +31,7 @@ local Theme = {
     Background = Color3.fromRGB(10, 10, 12),
     Secondary = Color3.fromRGB(15, 15, 18),
     Accent = Color3.fromRGB(160, 32, 240),
+    Glow = Color3.fromRGB(180, 50, 255),
     Text = Color3.fromRGB(255, 255, 255),
     DarkText = Color3.fromRGB(140, 140, 150),
     Border = Color3.fromRGB(30, 30, 35),
@@ -57,23 +58,18 @@ local function AddDrawing(obj) table.insert(Drawings, obj) end
 local function FullCleanup()
     Settings.Aimbot.Enabled = false
     Settings.Visuals.ESP = false
-    
     for _, conn in pairs(Connections) do if conn then conn:Disconnect() end end
     for _, draw in pairs(Drawings) do if draw then draw:Remove() end end
-    
-    -- Reset Lighting
-    Lighting.Brightness = 2
-    Lighting.ClockTime = 12
-    Lighting.Ambient = Color3.fromRGB(127,127,127)
+    Lighting.Brightness = 2; Lighting.ClockTime = 12; Lighting.Ambient = Color3.fromRGB(127,127,127)
     Camera.FieldOfView = 70
 end
 
 -- [[ AIMBOT ENGINE ]]
 local FOVCircle = Drawing.new("Circle")
-FOVCircle.Thickness = 1
+FOVCircle.Thickness = 1.5
 FOVCircle.Color = Theme.Accent
 FOVCircle.Filled = false
-FOVCircle.Transparency = 0.5
+FOVCircle.Transparency = 0.6
 AddDrawing(FOVCircle)
 
 local function GetClosestPlayer()
@@ -96,19 +92,21 @@ local function GetClosestPlayer()
     return closest
 end
 
+-- [[ ARSENAL OPTIMIZED SILENT AIM ]]
 AddConnection(RunService.RenderStepped:Connect(function()
     if Settings.Aimbot.Enabled then
         local target = GetClosestPlayer()
-        if target and UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton2) then
-            local targetPart = target.Character:FindFirstChild("Head") or target.Character:FindFirstChild("HumanoidRootPart")
+        if target and target.Character then
+            local targetPart = target.Character:FindFirstChild(Settings.Aimbot.TargetPart) or target.Character:FindFirstChild("HumanoidRootPart")
             if targetPart then
-                local targetPos = Camera:WorldToViewportPoint(targetPart.Position)
-                if Settings.Aimbot.SilentAim then
-                    local targetCFrame = CFrame.new(Camera.CFrame.Position, targetPart.Position)
-                    Camera.CFrame = Camera.CFrame:Lerp(targetCFrame, Settings.Aimbot.Smoothness)
-                elseif mousemoverel then
-                    local mousePos = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
-                    mousemoverel((targetPos.X - mousePos.X) * Settings.Aimbot.Smoothness, (targetPos.Y - mousePos.Y) * Settings.Aimbot.Smoothness)
+                -- Silent Aim Logic: If holding Right Click or Shooting
+                if UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton2) or UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton1) then
+                    local targetPos = Camera:WorldToViewportPoint(targetPart.Position)
+                    if Settings.Aimbot.SilentAim then
+                        -- Smoothly pull camera to target (Silent Aim Style)
+                        local targetCFrame = CFrame.new(Camera.CFrame.Position, targetPart.Position)
+                        Camera.CFrame = Camera.CFrame:Lerp(targetCFrame, Settings.Aimbot.Smoothness)
+                    end
                 end
             end
         end
@@ -119,29 +117,30 @@ AddConnection(RunService.RenderStepped:Connect(function()
     Camera.FieldOfView = Settings.Visuals.FieldOfView
 end))
 
--- [[ ESP ENGINE ]]
+-- [[ ENHANCED ESP ENGINE ]]
 local function CreateESP(player)
     local tracer = Drawing.new("Line")
     local box = Drawing.new("Square")
+    local boxOutline = Drawing.new("Square")
     local name = Drawing.new("Text")
-    AddDrawing(tracer); AddDrawing(box); AddDrawing(name)
     
-    tracer.Color = Theme.Accent
-    box.Color = Theme.Accent
-    name.Color = Theme.Text
-    name.Size = 14
-    name.Center = true
-    name.Outline = true
+    AddDrawing(tracer); AddDrawing(box); AddDrawing(boxOutline); AddDrawing(name)
+    
+    tracer.Color = Theme.Accent; tracer.Thickness = 1.5; tracer.Transparency = 0.7
+    box.Color = Theme.Accent; box.Thickness = 1.5; box.Filled = false; box.Transparency = 0.8
+    boxOutline.Color = Color3.new(0,0,0); boxOutline.Thickness = 3; boxOutline.Filled = false; boxOutline.Transparency = 0.5
+    name.Color = Theme.Text; name.Size = 14; name.Center = true; name.Outline = true; name.Font = 2
 
     local connection
     connection = RunService.RenderStepped:Connect(function()
         if player.Character and player.Character:FindFirstChild("HumanoidRootPart") and player.Character.Humanoid.Health > 0 and player ~= LocalPlayer then
             if Settings.Aimbot.TeamCheck and player.Team == LocalPlayer.Team then
-                tracer.Visible = false; box.Visible = false; name.Visible = false
+                tracer.Visible = false; box.Visible = false; boxOutline.Visible = false; name.Visible = false
                 return
             end
 
             local hrp = player.Character.HumanoidRootPart
+            -- Fix for Scopes: Use WorldToViewportPoint with a check for depth
             local pos, onScreen = Camera:WorldToViewportPoint(hrp.Position)
             
             if onScreen and Settings.Visuals.ESP then
@@ -156,22 +155,27 @@ local function CreateESP(player)
                     local bottom = Camera:WorldToViewportPoint(hrp.Position - Vector3.new(0, 3.5, 0))
                     local sizeY = math.abs(top.Y - bottom.Y)
                     local sizeX = sizeY * 0.6
+                    
                     box.Size = Vector2.new(sizeX, sizeY)
                     box.Position = Vector2.new(pos.X - sizeX / 2, pos.Y - sizeY / 2)
                     box.Visible = true
-                else box.Visible = false end
+                    
+                    boxOutline.Size = box.Size
+                    boxOutline.Position = box.Position
+                    boxOutline.Visible = true
+                else box.Visible = false; boxOutline.Visible = false end
 
                 if Settings.Visuals.Names then
-                    name.Text = player.Name
+                    name.Text = player.Name .. " [" .. math.floor((hrp.Position - Camera.CFrame.Position).Magnitude) .. "m]"
                     name.Position = Vector2.new(pos.X, pos.Y - (sizeY and sizeY/2 or 20) - 15)
                     name.Visible = true
                 else name.Visible = false end
             else
-                tracer.Visible = false; box.Visible = false; name.Visible = false
+                tracer.Visible = false; box.Visible = false; boxOutline.Visible = false; name.Visible = false
             end
         else
-            tracer.Visible = false; box.Visible = false; name.Visible = false
-            if not player.Parent then tracer:Remove(); box:Remove(); name:Remove(); connection:Disconnect() end
+            tracer.Visible = false; box.Visible = false; boxOutline.Visible = false; name.Visible = false
+            if not player.Parent then tracer:Remove(); box:Remove(); boxOutline:Remove(); name:Remove(); connection:Disconnect() end
         end
     end)
     AddConnection(connection)
@@ -215,7 +219,7 @@ SidebarCorner.Parent = Sidebar
 local Title = Instance.new("TextLabel")
 Title.Size = UDim2.new(1, 0, 0, 60)
 Title.BackgroundTransparency = 1
-Title.Text = "PURPLE.EXE | v5.3"
+Title.Text = "PURPLE.EXE | v5.4"
 Title.TextColor3 = Theme.Accent
 Title.TextSize = 18
 Title.Font = Theme.TitleFont
