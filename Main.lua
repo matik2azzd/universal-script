@@ -1,6 +1,6 @@
 --!strict
--- PURPLE.EXE | Universal Script Premium V4.5.0
--- INTERNAL VISUALS | NIGHT MODE | FOV CHANGER | GLOW ESP
+-- PURPLE.EXE | Universal Script Premium V4.6.0
+-- FULL ESP (BOX, NAME, TRACER) | INTERNAL VISUALS | NIGHT MODE | FOV CHANGER
 -- Created by Manus
 
 local Players = game:GetService("Players")
@@ -15,7 +15,7 @@ local Camera = workspace.CurrentCamera
 -- [[ SETTINGS ]]
 local Settings = {
     Aimbot = { Enabled = false, Smoothness = 0.15, FOV = 150, ShowFOV = true },
-    Visuals = { ESP = false, Tracers = false, NightMode = false, FieldOfView = 70 },
+    Visuals = { ESP = false, Tracers = false, Boxes = false, Names = false, NightMode = false, FieldOfView = 70 },
     Menu = { Visible = true, ToggleKey = Enum.KeyCode.Insert }
 }
 
@@ -142,8 +142,6 @@ RunService.RenderStepped:Connect(function()
     FOVCircle.Visible = Settings.Aimbot.ShowFOV
     FOVCircle.Radius = Settings.Aimbot.FOV
     FOVCircle.Position = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
-    
-    -- FOV Changer Logic
     Camera.FieldOfView = Settings.Visuals.FieldOfView
 end)
 
@@ -177,21 +175,68 @@ local function CreateESP(player)
     tracer.Thickness = 1
     tracer.Transparency = 0.8
 
+    local box = Drawing.new("Square")
+    box.Visible = false
+    box.Color = Theme.Accent
+    box.Thickness = 1
+    box.Filled = false
+    box.Transparency = 0.8
+
+    local name = Drawing.new("Text")
+    name.Visible = false
+    name.Color = Theme.Text
+    name.Size = 14
+    name.Center = true
+    name.Outline = true
+    name.Font = 2 -- Gotham
+
     local connection
     connection = RunService.RenderStepped:Connect(function()
         if player.Character and player.Character:FindFirstChild("HumanoidRootPart") and player.Character:FindFirstChild("Humanoid") and player.Character.Humanoid.Health > 0 and player ~= LocalPlayer then
-            local hrpPos, onScreen = Camera:WorldToViewportPoint(player.Character.HumanoidRootPart.Position)
-            if onScreen and Settings.Visuals.Tracers then
-                tracer.From = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y)
-                tracer.To = Vector2.new(hrpPos.X, hrpPos.Y)
-                tracer.Visible = true
+            local hrp = player.Character.HumanoidRootPart
+            local pos, onScreen = Camera:WorldToViewportPoint(hrp.Position)
+            
+            if onScreen and Settings.Visuals.ESP then
+                -- Tracer
+                if Settings.Visuals.Tracers then
+                    tracer.From = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y)
+                    tracer.To = Vector2.new(pos.X, pos.Y)
+                    tracer.Visible = true
+                else
+                    tracer.Visible = false
+                end
+
+                -- Box
+                if Settings.Visuals.Boxes then
+                    local size = (Camera:WorldToViewportPoint(hrp.Position - Vector3.new(0, 3, 0)).Y - Camera:WorldToViewportPoint(hrp.Position + Vector3.new(0, 2.6, 0)).Y)
+                    box.Size = Vector2.new(size * 0.6, size)
+                    box.Position = Vector2.new(pos.X - box.Size.X / 2, pos.Y - box.Size.Y / 2)
+                    box.Visible = true
+                else
+                    box.Visible = false
+                end
+
+                -- Name
+                if Settings.Visuals.Names then
+                    name.Text = player.Name
+                    name.Position = Vector2.new(pos.X, pos.Y - (box.Size.Y / 2) - 15)
+                    name.Visible = true
+                else
+                    name.Visible = false
+                end
             else
                 tracer.Visible = false
+                box.Visible = false
+                name.Visible = false
             end
         else
             tracer.Visible = false
+            box.Visible = false
+            name.Visible = false
             if not player.Parent then
                 tracer:Remove()
+                box:Remove()
+                name:Remove()
                 connection:Disconnect()
             end
         end
@@ -275,16 +320,19 @@ end
 local Loader = CustomLib:InitLoader("PURPLE GLOW")
 task.wait(0.5) Loader:UpdateStatus("Bypassing Security...", 0.3)
 task.wait(0.8) Loader:UpdateStatus("Injecting Modules...", 0.6)
-task.wait(0.6) Loader:UpdateStatus("Loading Internal Visuals...", 0.8)
+task.wait(0.6) Loader:UpdateStatus("Loading Full ESP...", 0.8)
 task.wait(0.5) Loader:UpdateStatus("Welcome, User!", 1)
 task.wait(0.5) Loader:Close()
 
-local Window = CustomLib:CreateWindow("PURPLE.EXE | v4.5.0")
+local Window = CustomLib:CreateWindow("PURPLE.EXE | v4.6.0")
 local AimbotTab = Window:CreateTab("Aimbot")
 AimbotTab:AddToggle("Enable Aimbot", false, function(v) Settings.Aimbot.Enabled = v end)
 AimbotTab:AddToggle("Show FOV", true, function(v) Settings.Aimbot.ShowFOV = v end)
 
 local VisualsTab = Window:CreateTab("Visuals")
+VisualsTab:AddToggle("Master ESP", false, function(v) Settings.Visuals.ESP = v end)
+VisualsTab:AddToggle("Boxes", false, function(v) Settings.Visuals.Boxes = v end)
+VisualsTab:AddToggle("Names", false, function(v) Settings.Visuals.Names = v end)
 VisualsTab:AddToggle("Tracers", false, function(v) Settings.Visuals.Tracers = v end)
 VisualsTab:AddToggle("Night Mode", false, function(v) Settings.Visuals.NightMode = v SetNightMode(v) end)
 VisualsTab:AddButton("Change FOV (Cycle)", function()
@@ -292,7 +340,6 @@ VisualsTab:AddButton("Change FOV (Cycle)", function()
     elseif Settings.Visuals.FieldOfView == 90 then Settings.Visuals.FieldOfView = 110
     elseif Settings.Visuals.FieldOfView == 110 then Settings.Visuals.FieldOfView = 120
     else Settings.Visuals.FieldOfView = 70 end
-    print("FOV set to:", Settings.Visuals.FieldOfView)
 end)
 
 local MiscTab = Window:CreateTab("Misc")
