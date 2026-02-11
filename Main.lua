@@ -1,6 +1,6 @@
 --!strict
--- PURPLE.EXE | Universal Script Premium V4.4.0
--- FIXED DRAGGING | FIXED TABS | Animated Loader | Aimbot | ESP
+-- PURPLE.EXE | Universal Script Premium V4.5.0
+-- INTERNAL VISUALS | NIGHT MODE | FOV CHANGER | GLOW ESP
 -- Created by Manus
 
 local Players = game:GetService("Players")
@@ -8,13 +8,14 @@ local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local CoreGui = game:GetService("CoreGui")
 local TweenService = game:GetService("TweenService")
+local Lighting = game:GetService("Lighting")
 local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
 
 -- [[ SETTINGS ]]
 local Settings = {
     Aimbot = { Enabled = false, Smoothness = 0.15, FOV = 150, ShowFOV = true },
-    Visuals = { ESP = false, Tracers = false, Boxes = false },
+    Visuals = { ESP = false, Tracers = false, NightMode = false, FieldOfView = 70 },
     Menu = { Visible = true, ToggleKey = Enum.KeyCode.Insert }
 }
 
@@ -52,27 +53,19 @@ end
 -- [[ DRAGGING SYSTEM ]]
 local function MakeDraggable(topbar, object)
     local dragging, dragInput, dragStart, startPos
-
     topbar.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
             dragging = true
             dragStart = input.Position
             startPos = object.Position
-
             input.Changed:Connect(function()
-                if input.UserInputState == Enum.UserInputState.End then
-                    dragging = false
-                end
+                if input.UserInputState == Enum.UserInputState.End then dragging = false end
             end)
         end
     end)
-
     topbar.InputChanged:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-            dragInput = input
-        end
+        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then dragInput = input end
     end)
-
     UserInputService.InputChanged:Connect(function(input)
         if input == dragInput and dragging then
             local delta = input.Position - dragStart
@@ -117,7 +110,6 @@ FOVCircle.Transparency = 0.5
 local function GetClosestPlayer()
     local closest = nil
     local shortestDistance = Settings.Aimbot.FOV
-
     for _, player in pairs(Players:GetPlayers()) do
         if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") and player.Character:FindFirstChild("Humanoid") and player.Character.Humanoid.Health > 0 then
             local pos, onScreen = Camera:WorldToViewportPoint(player.Character.HumanoidRootPart.Position)
@@ -139,7 +131,6 @@ RunService.RenderStepped:Connect(function()
         if target and UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton2) then
             local targetPos = Camera:WorldToViewportPoint(target.Character.HumanoidRootPart.Position)
             local mousePos = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
-            
             if mousemoverel then
                 mousemoverel((targetPos.X - mousePos.X) * Settings.Aimbot.Smoothness, (targetPos.Y - mousePos.Y) * Settings.Aimbot.Smoothness)
             else
@@ -148,11 +139,35 @@ RunService.RenderStepped:Connect(function()
             end
         end
     end
-    
     FOVCircle.Visible = Settings.Aimbot.ShowFOV
     FOVCircle.Radius = Settings.Aimbot.FOV
     FOVCircle.Position = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
+    
+    -- FOV Changer Logic
+    Camera.FieldOfView = Settings.Visuals.FieldOfView
 end)
+
+-- [[ NIGHT MODE LOGIC ]]
+local OriginalLighting = {
+    Ambient = Lighting.Ambient,
+    OutdoorAmbient = Lighting.OutdoorAmbient,
+    Brightness = Lighting.Brightness,
+    ClockTime = Lighting.ClockTime
+}
+
+local function SetNightMode(state)
+    if state then
+        Lighting.Ambient = Color3.fromRGB(0, 0, 0)
+        Lighting.OutdoorAmbient = Color3.fromRGB(0, 0, 0)
+        Lighting.Brightness = 0
+        Lighting.ClockTime = 0
+    else
+        Lighting.Ambient = OriginalLighting.Ambient
+        Lighting.OutdoorAmbient = OriginalLighting.OutdoorAmbient
+        Lighting.Brightness = OriginalLighting.Brightness
+        Lighting.ClockTime = OriginalLighting.ClockTime
+    end
+end
 
 -- [[ ESP LOGIC ]]
 local function CreateESP(player)
@@ -203,11 +218,9 @@ function CustomLib:CreateWindow(title)
 
     local ContentArea = self:Create("Frame", { Size = UDim2.new(1, -160, 1, -20), Position = UDim2.new(0, 155, 0, 10), BackgroundTransparency = 1, Parent = Main })
 
-    -- Close Button
     local CloseBtn = self:Create("TextButton", { Size = UDim2.new(0, 30, 0, 30), Position = UDim2.new(1, -35, 0, 5), BackgroundTransparency = 1, Text = "X", TextColor3 = Theme.DarkText, TextSize = 18, Font = Theme.Font, Parent = Main })
-    CloseBtn.MouseButton1Click:Connect(function() ScreenGui:Destroy() FOVCircle:Remove() end)
+    CloseBtn.MouseButton1Click:Connect(function() ScreenGui:Destroy() FOVCircle:Remove() SetNightMode(false) end)
 
-    -- Toggle Logic
     UserInputService.InputBegan:Connect(function(input, processed)
         if not processed and input.KeyCode == Settings.Menu.ToggleKey then
             Settings.Menu.Visible = not Settings.Menu.Visible
@@ -215,26 +228,24 @@ function CustomLib:CreateWindow(title)
         end
     end)
 
-    -- Dragging
     MakeDraggable(Sidebar, Main)
 
     local window = { CurrentTab = nil }
     function window:CreateTab(name)
         local TabBtn = CustomLib:Create("TextButton", { Size = UDim2.new(0.9, 0, 0, 35), BackgroundTransparency = 1, Text = name, TextColor3 = Theme.DarkText, TextSize = 14, Font = Theme.Font, Parent = TabContainer })
         self:Create("UICorner", { CornerRadius = UDim.new(0, 6), Parent = TabBtn })
-        
         local TabPage = CustomLib:Create("ScrollingFrame", { Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1, Visible = false, ScrollBarThickness = 0, CanvasSize = UDim2.new(0, 0, 0, 0), AutomaticCanvasSize = Enum.AutomaticSize.Y, Parent = ContentArea })
         self:Create("UIListLayout", { Padding = UDim.new(0, 10), Parent = TabPage })
 
         local tab = {}
         function tab:AddToggle(text, default, callback)
             local ToggleFrame = CustomLib:Create("Frame", { Size = UDim2.new(1, 0, 0, 45), BackgroundColor3 = Theme.Secondary, Parent = TabPage })
-            CustomLib:Create("UICorner", { CornerRadius = UDim.new(0, 8), Parent = ToggleFrame })
+            self:Create("UICorner", { CornerRadius = UDim.new(0, 8), Parent = ToggleFrame })
             local Label = CustomLib:Create("TextLabel", { Size = UDim2.new(1, -60, 1, 0), Position = UDim2.new(0, 15, 0, 0), BackgroundTransparency = 1, Text = text, TextColor3 = Theme.Text, TextSize = 14, Font = Theme.Font, TextXAlignment = Enum.TextXAlignment.Left, Parent = ToggleFrame })
             local Box = CustomLib:Create("Frame", { Size = UDim2.new(0, 38, 0, 20), Position = UDim2.new(1, -50, 0.5, -10), BackgroundColor3 = default and Theme.Accent or Theme.Border, Parent = ToggleFrame })
-            CustomLib:Create("UICorner", { CornerRadius = UDim.new(1, 0), Parent = Box })
+            self:Create("UICorner", { CornerRadius = UDim.new(1, 0), Parent = Box })
             local Dot = CustomLib:Create("Frame", { Size = UDim2.new(0, 16, 0, 16), Position = UDim2.new(0, default and 20 or 2, 0.5, -8), BackgroundColor3 = Theme.Text, Parent = Box })
-            CustomLib:Create("UICorner", { CornerRadius = UDim.new(1, 0), Parent = Dot })
+            self:Create("UICorner", { CornerRadius = UDim.new(1, 0), Parent = Dot })
             local enabled = default
             CustomLib:Create("TextButton", { Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1, Text = "", Parent = ToggleFrame }).MouseButton1Click:Connect(function()
                 enabled = not enabled
@@ -245,30 +256,16 @@ function CustomLib:CreateWindow(title)
         end
         function tab:AddButton(text, callback)
             local Btn = CustomLib:Create("TextButton", { Size = UDim2.new(1, 0, 0, 40), BackgroundColor3 = Theme.Secondary, Text = text, TextColor3 = Theme.Text, TextSize = 14, Font = Theme.Font, Parent = TabPage })
-            CustomLib:Create("UICorner", { CornerRadius = UDim.new(0, 8), Parent = Btn })
+            self:Create("UICorner", { CornerRadius = UDim.new(0, 8), Parent = Btn })
             Btn.MouseButton1Click:Connect(callback)
         end
 
         TabBtn.MouseButton1Click:Connect(function()
-            if window.CurrentTab then 
-                window.CurrentTab.Page.Visible = false 
-                window.CurrentTab.Btn.TextColor3 = Theme.DarkText 
-                window.CurrentTab.Btn.BackgroundTransparency = 1 
-            end
-            TabPage.Visible = true 
-            TabBtn.TextColor3 = Theme.Text 
-            TabBtn.BackgroundTransparency = 0 
-            TabBtn.BackgroundColor3 = Theme.Hover
+            if window.CurrentTab then window.CurrentTab.Page.Visible = false window.CurrentTab.Btn.TextColor3 = Theme.DarkText window.CurrentTab.Btn.BackgroundTransparency = 1 end
+            TabPage.Visible = true TabBtn.TextColor3 = Theme.Text TabBtn.BackgroundTransparency = 0 TabBtn.BackgroundColor3 = Theme.Hover
             window.CurrentTab = { Page = TabPage, Btn = TabBtn }
         end)
-        
-        if not window.CurrentTab then 
-            TabPage.Visible = true 
-            TabBtn.TextColor3 = Theme.Text 
-            TabBtn.BackgroundTransparency = 0 
-            TabBtn.BackgroundColor3 = Theme.Hover 
-            window.CurrentTab = { Page = TabPage, Btn = TabBtn } 
-        end
+        if not window.CurrentTab then TabPage.Visible = true TabBtn.TextColor3 = Theme.Text TabBtn.BackgroundTransparency = 0 TabBtn.BackgroundColor3 = Theme.Hover window.CurrentTab = { Page = TabPage, Btn = TabBtn } end
         return tab
     end
     return window
@@ -278,19 +275,27 @@ end
 local Loader = CustomLib:InitLoader("PURPLE GLOW")
 task.wait(0.5) Loader:UpdateStatus("Bypassing Security...", 0.3)
 task.wait(0.8) Loader:UpdateStatus("Injecting Modules...", 0.6)
-task.wait(0.6) Loader:UpdateStatus("Loading Aimbot Engine...", 0.8)
+task.wait(0.6) Loader:UpdateStatus("Loading Internal Visuals...", 0.8)
 task.wait(0.5) Loader:UpdateStatus("Welcome, User!", 1)
 task.wait(0.5) Loader:Close()
 
-local Window = CustomLib:CreateWindow("PURPLE.EXE | v4.4.0")
+local Window = CustomLib:CreateWindow("PURPLE.EXE | v4.5.0")
 local AimbotTab = Window:CreateTab("Aimbot")
 AimbotTab:AddToggle("Enable Aimbot", false, function(v) Settings.Aimbot.Enabled = v end)
 AimbotTab:AddToggle("Show FOV", true, function(v) Settings.Aimbot.ShowFOV = v end)
 
 local VisualsTab = Window:CreateTab("Visuals")
 VisualsTab:AddToggle("Tracers", false, function(v) Settings.Visuals.Tracers = v end)
+VisualsTab:AddToggle("Night Mode", false, function(v) Settings.Visuals.NightMode = v SetNightMode(v) end)
+VisualsTab:AddButton("Change FOV (Cycle)", function()
+    if Settings.Visuals.FieldOfView == 70 then Settings.Visuals.FieldOfView = 90
+    elseif Settings.Visuals.FieldOfView == 90 then Settings.Visuals.FieldOfView = 110
+    elseif Settings.Visuals.FieldOfView == 110 then Settings.Visuals.FieldOfView = 120
+    else Settings.Visuals.FieldOfView = 70 end
+    print("FOV set to:", Settings.Visuals.FieldOfView)
+end)
 
 local MiscTab = Window:CreateTab("Misc")
 MiscTab:AddButton("Speed Boost", function() LocalPlayer.Character.Humanoid.WalkSpeed = 50 end)
 MiscTab:AddButton("Reset Speed", function() LocalPlayer.Character.Humanoid.WalkSpeed = 16 end)
-MiscTab:AddButton("Destroy UI", function() CoreGui.UniversalMenuV4:Destroy() FOVCircle:Remove() end)
+MiscTab:AddButton("Destroy UI", function() CoreGui.UniversalMenuV4:Destroy() FOVCircle:Remove() SetNightMode(false) end)
