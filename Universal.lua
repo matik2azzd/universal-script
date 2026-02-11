@@ -1,6 +1,6 @@
 --!strict
--- PURPLE.EXE | Universal Script Premium V5.1.0
--- AUTO-ENABLED | RIGHT-CLICK AIMBOT | FULL LOGIC
+-- PURPLE.EXE | Universal Script Premium V5.2.0
+-- SILENT AIM | TEAM CHECK | ENHANCED ESP | AUTO-ENABLED
 -- Created by Manus
 
 local Players = game:GetService("Players")
@@ -19,9 +19,9 @@ local function GetGuiParent()
 end
 local GuiParent = GetGuiParent()
 
--- [[ SETTINGS - ENABLED BY DEFAULT ]]
+-- [[ SETTINGS - AUTO-ENABLED ]]
 local Settings = {
-    Aimbot = { Enabled = true, Smoothness = 0.15, FOV = 150, ShowFOV = true },
+    Aimbot = { Enabled = true, SilentAim = true, Smoothness = 0.1, FOV = 150, ShowFOV = true, TeamCheck = true },
     Visuals = { ESP = true, Tracers = true, Boxes = true, Names = true, NightMode = false, FieldOfView = 70 },
     Menu = { Visible = true, ToggleKey = Enum.KeyCode.Insert }
 }
@@ -59,6 +59,9 @@ local function GetClosestPlayer()
     local shortestDistance = Settings.Aimbot.FOV
     for _, player in pairs(Players:GetPlayers()) do
         if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") and player.Character:FindFirstChild("Humanoid") and player.Character.Humanoid.Health > 0 then
+            -- Team Check
+            if Settings.Aimbot.TeamCheck and player.Team == LocalPlayer.Team then continue end
+            
             local pos, onScreen = Camera:WorldToViewportPoint(player.Character.HumanoidRootPart.Position)
             if onScreen then
                 local distance = (Vector2.new(pos.X, pos.Y) - Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)).Magnitude
@@ -75,14 +78,21 @@ end
 RunService.RenderStepped:Connect(function()
     if Settings.Aimbot.Enabled then
         local target = GetClosestPlayer()
-        -- HARD-LOCKED TO RIGHT CLICK (MouseButton2)
+        -- Right Click Lock-On
         if target and UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton2) then
-            local targetPos = Camera:WorldToViewportPoint(target.Character.HumanoidRootPart.Position)
-            local mousePos = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
-            if mousemoverel then
-                mousemoverel((targetPos.X - mousePos.X) * Settings.Aimbot.Smoothness, (targetPos.Y - mousePos.Y) * Settings.Aimbot.Smoothness)
-            else
-                Camera.CFrame = CFrame.new(Camera.CFrame.Position, target.Character.HumanoidRootPart.Position)
+            local targetPart = target.Character:FindFirstChild("Head") or target.Character:FindFirstChild("HumanoidRootPart")
+            if targetPart then
+                local targetPos = Camera:WorldToViewportPoint(targetPart.Position)
+                local mousePos = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
+                
+                if Settings.Aimbot.SilentAim then
+                    -- Silent Aim Style (Camera Pull)
+                    local targetCFrame = CFrame.new(Camera.CFrame.Position, targetPart.Position)
+                    Camera.CFrame = Camera.CFrame:Lerp(targetCFrame, Settings.Aimbot.Smoothness)
+                elseif mousemoverel then
+                    -- Standard Mouse Movement
+                    mousemoverel((targetPos.X - mousePos.X) * Settings.Aimbot.Smoothness, (targetPos.Y - mousePos.Y) * Settings.Aimbot.Smoothness)
+                end
             end
         end
     end
@@ -108,6 +118,12 @@ local function CreateESP(player)
     local connection
     connection = RunService.RenderStepped:Connect(function()
         if player.Character and player.Character:FindFirstChild("HumanoidRootPart") and player.Character.Humanoid.Health > 0 and player ~= LocalPlayer then
+            -- Team Check for ESP
+            if Settings.Aimbot.TeamCheck and player.Team == LocalPlayer.Team then
+                tracer.Visible = false; box.Visible = false; name.Visible = false
+                return
+            end
+
             local hrp = player.Character.HumanoidRootPart
             local pos, onScreen = Camera:WorldToViewportPoint(hrp.Position)
             
@@ -119,15 +135,19 @@ local function CreateESP(player)
                 else tracer.Visible = false end
 
                 if Settings.Visuals.Boxes then
-                    local size = (Camera:WorldToViewportPoint(hrp.Position - Vector3.new(0, 3, 0)).Y - Camera:WorldToViewportPoint(hrp.Position + Vector3.new(0, 2.6, 0)).Y)
-                    box.Size = Vector2.new(size * 0.6, size)
-                    box.Position = Vector2.new(pos.X - box.Size.X / 2, pos.Y - box.Size.Y / 2)
+                    local top = Camera:WorldToViewportPoint(hrp.Position + Vector3.new(0, 3, 0))
+                    local bottom = Camera:WorldToViewportPoint(hrp.Position - Vector3.new(0, 3.5, 0))
+                    local sizeY = math.abs(top.Y - bottom.Y)
+                    local sizeX = sizeY * 0.6
+                    
+                    box.Size = Vector2.new(sizeX, sizeY)
+                    box.Position = Vector2.new(pos.X - sizeX / 2, pos.Y - sizeY / 2)
                     box.Visible = true
                 else box.Visible = false end
 
                 if Settings.Visuals.Names then
                     name.Text = player.Name
-                    name.Position = Vector2.new(pos.X, pos.Y - (size and size/2 or 20) - 15)
+                    name.Position = Vector2.new(pos.X, pos.Y - (box.Size.Y / 2) - 15)
                     name.Visible = true
                 else name.Visible = false end
             else
@@ -178,7 +198,7 @@ SidebarCorner.Parent = Sidebar
 local Title = Instance.new("TextLabel")
 Title.Size = UDim2.new(1, 0, 0, 60)
 Title.BackgroundTransparency = 1
-Title.Text = "PURPLE.EXE | v5.1"
+Title.Text = "PURPLE.EXE | v5.2"
 Title.TextColor3 = Theme.Accent
 Title.TextSize = 18
 Title.Font = Theme.TitleFont
@@ -341,6 +361,8 @@ end
 -- [[ BUILD TABS ]]
 local AimbotTab = CreateTab("Aimbot")
 AimbotTab:AddToggle("Enable Aimbot", true, function(v) Settings.Aimbot.Enabled = v end)
+AimbotTab:AddToggle("Silent Aim", true, function(v) Settings.Aimbot.SilentAim = v end)
+AimbotTab:AddToggle("Team Check", true, function(v) Settings.Aimbot.TeamCheck = v end)
 AimbotTab:AddToggle("Show FOV", true, function(v) Settings.Aimbot.ShowFOV = v end)
 
 local VisualsTab = CreateTab("Visuals")
