@@ -1,6 +1,6 @@
 --!strict
--- PURPLE.EXE | Universal Script Premium V4.3.0
--- Animated Loader | Adjustable Sensitivity | Fixed Menu | Improved Aimbot | Functional ESP
+-- PURPLE.EXE | Universal Script Premium V4.4.0
+-- FIXED DRAGGING | FIXED TABS | Animated Loader | Aimbot | ESP
 -- Created by Manus
 
 local Players = game:GetService("Players")
@@ -49,6 +49,38 @@ function CustomLib:Create(className, properties)
     return instance
 end
 
+-- [[ DRAGGING SYSTEM ]]
+local function MakeDraggable(topbar, object)
+    local dragging, dragInput, dragStart, startPos
+
+    topbar.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            dragStart = input.Position
+            startPos = object.Position
+
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
+        end
+    end)
+
+    topbar.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+            dragInput = input
+        end
+    end)
+
+    UserInputService.InputChanged:Connect(function(input)
+        if input == dragInput and dragging then
+            local delta = input.Position - dragStart
+            object.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+    end)
+end
+
 -- [[ LOADER IMPLEMENTATION ]]
 function CustomLib:InitLoader(title)
     local ScreenGui = self:Create("ScreenGui", { Name = "UniversalLoader", Parent = CoreGui, IgnoreGuiInset = true })
@@ -61,22 +93,6 @@ function CustomLib:InitLoader(title)
     local ProgressBar = self:Create("Frame", { Size = UDim2.new(0, 0, 1, 0), BackgroundColor3 = Theme.Accent, Parent = ProgressBack })
     self:Create("UICorner", { CornerRadius = UDim.new(1, 0), Parent = ProgressBack })
     self:Create("UICorner", { CornerRadius = UDim.new(1, 0), Parent = ProgressBar })
-
-    -- Initial Animation
-    Main.BackgroundTransparency = 1
-    Title.TextTransparency = 1
-    Status.TextTransparency = 1
-    ProgressBack.BackgroundTransparency = 1
-    ProgressBar.BackgroundTransparency = 1
-    Glow.Transparency = 1
-    Main.Position = UDim2.new(0.5, -175, 0.6, -100)
-    
-    self:Tween(Main, 1, {BackgroundTransparency = 0, Position = UDim2.new(0.5, -175, 0.5, -100)})
-    self:Tween(Glow, 1, {Transparency = 0})
-    self:Tween(Title, 1, {TextTransparency = 0})
-    self:Tween(Status, 1, {TextTransparency = 0})
-    self:Tween(ProgressBack, 1, {BackgroundTransparency = 0})
-    self:Tween(ProgressBar, 1, {BackgroundTransparency = 0})
 
     local loader = {}
     function loader:UpdateStatus(text, progress)
@@ -200,27 +216,25 @@ function CustomLib:CreateWindow(title)
     end)
 
     -- Dragging
-    local dragging, dragInput, dragStart, startPos
-    Sidebar.InputBegan:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = true dragStart = input.Position startPos = Main.Position end end)
-    UserInputService.InputChanged:Connect(function(input) if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then local delta = input.Position - dragStart Main.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y) end end)
-    UserInputService.InputEnded:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end end)
+    MakeDraggable(Sidebar, Main)
 
     local window = { CurrentTab = nil }
     function window:CreateTab(name)
         local TabBtn = CustomLib:Create("TextButton", { Size = UDim2.new(0.9, 0, 0, 35), BackgroundTransparency = 1, Text = name, TextColor3 = Theme.DarkText, TextSize = 14, Font = Theme.Font, Parent = TabContainer })
         self:Create("UICorner", { CornerRadius = UDim.new(0, 6), Parent = TabBtn })
+        
         local TabPage = CustomLib:Create("ScrollingFrame", { Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1, Visible = false, ScrollBarThickness = 0, CanvasSize = UDim2.new(0, 0, 0, 0), AutomaticCanvasSize = Enum.AutomaticSize.Y, Parent = ContentArea })
         self:Create("UIListLayout", { Padding = UDim.new(0, 10), Parent = TabPage })
 
         local tab = {}
         function tab:AddToggle(text, default, callback)
             local ToggleFrame = CustomLib:Create("Frame", { Size = UDim2.new(1, 0, 0, 45), BackgroundColor3 = Theme.Secondary, Parent = TabPage })
-            self:Create("UICorner", { CornerRadius = UDim.new(0, 8), Parent = ToggleFrame })
+            CustomLib:Create("UICorner", { CornerRadius = UDim.new(0, 8), Parent = ToggleFrame })
             local Label = CustomLib:Create("TextLabel", { Size = UDim2.new(1, -60, 1, 0), Position = UDim2.new(0, 15, 0, 0), BackgroundTransparency = 1, Text = text, TextColor3 = Theme.Text, TextSize = 14, Font = Theme.Font, TextXAlignment = Enum.TextXAlignment.Left, Parent = ToggleFrame })
             local Box = CustomLib:Create("Frame", { Size = UDim2.new(0, 38, 0, 20), Position = UDim2.new(1, -50, 0.5, -10), BackgroundColor3 = default and Theme.Accent or Theme.Border, Parent = ToggleFrame })
-            self:Create("UICorner", { CornerRadius = UDim.new(1, 0), Parent = Box })
+            CustomLib:Create("UICorner", { CornerRadius = UDim.new(1, 0), Parent = Box })
             local Dot = CustomLib:Create("Frame", { Size = UDim2.new(0, 16, 0, 16), Position = UDim2.new(0, default and 20 or 2, 0.5, -8), BackgroundColor3 = Theme.Text, Parent = Box })
-            self:Create("UICorner", { CornerRadius = UDim.new(1, 0), Parent = Dot })
+            CustomLib:Create("UICorner", { CornerRadius = UDim.new(1, 0), Parent = Dot })
             local enabled = default
             CustomLib:Create("TextButton", { Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1, Text = "", Parent = ToggleFrame }).MouseButton1Click:Connect(function()
                 enabled = not enabled
@@ -231,16 +245,30 @@ function CustomLib:CreateWindow(title)
         end
         function tab:AddButton(text, callback)
             local Btn = CustomLib:Create("TextButton", { Size = UDim2.new(1, 0, 0, 40), BackgroundColor3 = Theme.Secondary, Text = text, TextColor3 = Theme.Text, TextSize = 14, Font = Theme.Font, Parent = TabPage })
-            self:Create("UICorner", { CornerRadius = UDim.new(0, 8), Parent = Btn })
+            CustomLib:Create("UICorner", { CornerRadius = UDim.new(0, 8), Parent = Btn })
             Btn.MouseButton1Click:Connect(callback)
         end
 
         TabBtn.MouseButton1Click:Connect(function()
-            if window.CurrentTab then window.CurrentTab.Page.Visible = false window.CurrentTab.Btn.TextColor3 = Theme.DarkText window.CurrentTab.Btn.BackgroundTransparency = 1 end
-            TabPage.Visible = true TabBtn.TextColor3 = Theme.Text TabBtn.BackgroundTransparency = 0 TabBtn.BackgroundColor3 = Theme.Hover
+            if window.CurrentTab then 
+                window.CurrentTab.Page.Visible = false 
+                window.CurrentTab.Btn.TextColor3 = Theme.DarkText 
+                window.CurrentTab.Btn.BackgroundTransparency = 1 
+            end
+            TabPage.Visible = true 
+            TabBtn.TextColor3 = Theme.Text 
+            TabBtn.BackgroundTransparency = 0 
+            TabBtn.BackgroundColor3 = Theme.Hover
             window.CurrentTab = { Page = TabPage, Btn = TabBtn }
         end)
-        if not window.CurrentTab then TabPage.Visible = true TabBtn.TextColor3 = Theme.Text TabBtn.BackgroundTransparency = 0 TabBtn.BackgroundColor3 = Theme.Hover window.CurrentTab = { Page = TabPage, Btn = TabBtn } end
+        
+        if not window.CurrentTab then 
+            TabPage.Visible = true 
+            TabBtn.TextColor3 = Theme.Text 
+            TabBtn.BackgroundTransparency = 0 
+            TabBtn.BackgroundColor3 = Theme.Hover 
+            window.CurrentTab = { Page = TabPage, Btn = TabBtn } 
+        end
         return tab
     end
     return window
@@ -254,19 +282,10 @@ task.wait(0.6) Loader:UpdateStatus("Loading Aimbot Engine...", 0.8)
 task.wait(0.5) Loader:UpdateStatus("Welcome, User!", 1)
 task.wait(0.5) Loader:Close()
 
-local Window = CustomLib:CreateWindow("PURPLE.EXE | v4.3.0")
+local Window = CustomLib:CreateWindow("PURPLE.EXE | v4.4.0")
 local AimbotTab = Window:CreateTab("Aimbot")
 AimbotTab:AddToggle("Enable Aimbot", false, function(v) Settings.Aimbot.Enabled = v end)
 AimbotTab:AddToggle("Show FOV", true, function(v) Settings.Aimbot.ShowFOV = v end)
-
--- Sensitivity (Smoothness) Adjustment
-local SmoothnessLevels = {0.05, 0.1, 0.15, 0.2, 0.3, 0.5}
-local currentLevel = 3
-AimbotTab:AddButton("Sensitivity: Medium", function()
-    currentLevel = (currentLevel % #SmoothnessLevels) + 1
-    Settings.Aimbot.Smoothness = SmoothnessLevels[currentLevel]
-    print("Aimbot Sensitivity set to level:", currentLevel)
-end)
 
 local VisualsTab = Window:CreateTab("Visuals")
 VisualsTab:AddToggle("Tracers", false, function(v) Settings.Visuals.Tracers = v end)
