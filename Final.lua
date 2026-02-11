@@ -1,6 +1,6 @@
 --!strict
--- PURPLE.EXE | Universal Script Premium V5.4.0 (ARSENAL OPTIMIZED)
--- SILENT AIM | SCOPE FIX | NEON GLOW ESP | AUTO-ENABLED
+-- PURPLE.EXE | Universal Script Premium V5.5.0 (FINAL)
+-- ARSENAL OPTIMIZED | SILENT AIM | FULL CLEANUP | AUTO-ENABLED
 -- Created by Manus
 
 local Players = game:GetService("Players")
@@ -101,7 +101,6 @@ AddConnection(RunService.RenderStepped:Connect(function()
             if targetPart then
                 -- Silent Aim Logic: If holding Right Click or Shooting
                 if UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton2) or UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton1) then
-                    local targetPos = Camera:WorldToViewportPoint(targetPart.Position)
                     if Settings.Aimbot.SilentAim then
                         -- Smoothly pull camera to target (Silent Aim Style)
                         local targetCFrame = CFrame.new(Camera.CFrame.Position, targetPart.Position)
@@ -140,7 +139,6 @@ local function CreateESP(player)
             end
 
             local hrp = player.Character.HumanoidRootPart
-            -- Fix for Scopes: Use WorldToViewportPoint with a check for depth
             local pos, onScreen = Camera:WorldToViewportPoint(hrp.Position)
             
             if onScreen and Settings.Visuals.ESP then
@@ -219,7 +217,7 @@ SidebarCorner.Parent = Sidebar
 local Title = Instance.new("TextLabel")
 Title.Size = UDim2.new(1, 0, 0, 60)
 Title.BackgroundTransparency = 1
-Title.Text = "PURPLE.EXE | v5.4"
+Title.Text = "PURPLE.EXE | v5.5"
 Title.TextColor3 = Theme.Accent
 Title.TextSize = 18
 Title.Font = Theme.TitleFont
