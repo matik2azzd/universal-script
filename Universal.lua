@@ -1,6 +1,6 @@
 --!strict
--- PURPLE.EXE | Universal Script Premium V5.2.0
--- SILENT AIM | TEAM CHECK | ENHANCED ESP | AUTO-ENABLED
+-- PURPLE.EXE | Universal Script Premium V5.3.0
+-- FULL CLEANUP ON DESTROY | SILENT AIM | TEAM CHECK | AUTO-ENABLED
 -- Created by Manus
 
 local Players = game:GetService("Players")
@@ -47,19 +47,40 @@ local function Tween(obj, time, props)
     return t
 end
 
+-- [[ GLOBAL CLEANUP SYSTEM ]]
+local Connections = {}
+local Drawings = {}
+
+local function AddConnection(conn) table.insert(Connections, conn) end
+local function AddDrawing(obj) table.insert(Drawings, obj) end
+
+local function FullCleanup()
+    Settings.Aimbot.Enabled = false
+    Settings.Visuals.ESP = false
+    
+    for _, conn in pairs(Connections) do if conn then conn:Disconnect() end end
+    for _, draw in pairs(Drawings) do if draw then draw:Remove() end end
+    
+    -- Reset Lighting
+    Lighting.Brightness = 2
+    Lighting.ClockTime = 12
+    Lighting.Ambient = Color3.fromRGB(127,127,127)
+    Camera.FieldOfView = 70
+end
+
 -- [[ AIMBOT ENGINE ]]
 local FOVCircle = Drawing.new("Circle")
 FOVCircle.Thickness = 1
 FOVCircle.Color = Theme.Accent
 FOVCircle.Filled = false
 FOVCircle.Transparency = 0.5
+AddDrawing(FOVCircle)
 
 local function GetClosestPlayer()
     local closest = nil
     local shortestDistance = Settings.Aimbot.FOV
     for _, player in pairs(Players:GetPlayers()) do
         if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") and player.Character:FindFirstChild("Humanoid") and player.Character.Humanoid.Health > 0 then
-            -- Team Check
             if Settings.Aimbot.TeamCheck and player.Team == LocalPlayer.Team then continue end
             
             local pos, onScreen = Camera:WorldToViewportPoint(player.Character.HumanoidRootPart.Position)
@@ -75,22 +96,18 @@ local function GetClosestPlayer()
     return closest
 end
 
-RunService.RenderStepped:Connect(function()
+AddConnection(RunService.RenderStepped:Connect(function()
     if Settings.Aimbot.Enabled then
         local target = GetClosestPlayer()
-        -- Right Click Lock-On
         if target and UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton2) then
             local targetPart = target.Character:FindFirstChild("Head") or target.Character:FindFirstChild("HumanoidRootPart")
             if targetPart then
                 local targetPos = Camera:WorldToViewportPoint(targetPart.Position)
-                local mousePos = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
-                
                 if Settings.Aimbot.SilentAim then
-                    -- Silent Aim Style (Camera Pull)
                     local targetCFrame = CFrame.new(Camera.CFrame.Position, targetPart.Position)
                     Camera.CFrame = Camera.CFrame:Lerp(targetCFrame, Settings.Aimbot.Smoothness)
                 elseif mousemoverel then
-                    -- Standard Mouse Movement
+                    local mousePos = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
                     mousemoverel((targetPos.X - mousePos.X) * Settings.Aimbot.Smoothness, (targetPos.Y - mousePos.Y) * Settings.Aimbot.Smoothness)
                 end
             end
@@ -100,13 +117,14 @@ RunService.RenderStepped:Connect(function()
     FOVCircle.Radius = Settings.Aimbot.FOV
     FOVCircle.Position = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
     Camera.FieldOfView = Settings.Visuals.FieldOfView
-end)
+end))
 
 -- [[ ESP ENGINE ]]
 local function CreateESP(player)
     local tracer = Drawing.new("Line")
     local box = Drawing.new("Square")
     local name = Drawing.new("Text")
+    AddDrawing(tracer); AddDrawing(box); AddDrawing(name)
     
     tracer.Color = Theme.Accent
     box.Color = Theme.Accent
@@ -118,7 +136,6 @@ local function CreateESP(player)
     local connection
     connection = RunService.RenderStepped:Connect(function()
         if player.Character and player.Character:FindFirstChild("HumanoidRootPart") and player.Character.Humanoid.Health > 0 and player ~= LocalPlayer then
-            -- Team Check for ESP
             if Settings.Aimbot.TeamCheck and player.Team == LocalPlayer.Team then
                 tracer.Visible = false; box.Visible = false; name.Visible = false
                 return
@@ -139,7 +156,6 @@ local function CreateESP(player)
                     local bottom = Camera:WorldToViewportPoint(hrp.Position - Vector3.new(0, 3.5, 0))
                     local sizeY = math.abs(top.Y - bottom.Y)
                     local sizeX = sizeY * 0.6
-                    
                     box.Size = Vector2.new(sizeX, sizeY)
                     box.Position = Vector2.new(pos.X - sizeX / 2, pos.Y - sizeY / 2)
                     box.Visible = true
@@ -147,7 +163,7 @@ local function CreateESP(player)
 
                 if Settings.Visuals.Names then
                     name.Text = player.Name
-                    name.Position = Vector2.new(pos.X, pos.Y - (box.Size.Y / 2) - 15)
+                    name.Position = Vector2.new(pos.X, pos.Y - (sizeY and sizeY/2 or 20) - 15)
                     name.Visible = true
                 else name.Visible = false end
             else
@@ -158,9 +174,10 @@ local function CreateESP(player)
             if not player.Parent then tracer:Remove(); box:Remove(); name:Remove(); connection:Disconnect() end
         end
     end)
+    AddConnection(connection)
 end
 for _, p in pairs(Players:GetPlayers()) do CreateESP(p) end
-Players.PlayerAdded:Connect(CreateESP)
+AddConnection(Players.PlayerAdded:Connect(CreateESP))
 
 -- [[ UI ENGINE ]]
 local ScreenGui = Instance.new("ScreenGui")
@@ -198,7 +215,7 @@ SidebarCorner.Parent = Sidebar
 local Title = Instance.new("TextLabel")
 Title.Size = UDim2.new(1, 0, 0, 60)
 Title.BackgroundTransparency = 1
-Title.Text = "PURPLE.EXE | v5.2"
+Title.Text = "PURPLE.EXE | v5.3"
 Title.TextColor3 = Theme.Accent
 Title.TextSize = 18
 Title.Font = Theme.TitleFont
@@ -237,12 +254,12 @@ UserInputService.InputChanged:Connect(function(input)
 end)
 
 -- Toggle Menu
-UserInputService.InputBegan:Connect(function(input, processed)
+AddConnection(UserInputService.InputBegan:Connect(function(input, processed)
     if not processed and input.KeyCode == Settings.Menu.ToggleKey then
         Settings.Menu.Visible = not Settings.Menu.Visible
         Main.Visible = Settings.Menu.Visible
     end
-end)
+end))
 
 -- Tab System
 local Tabs = {}
@@ -379,4 +396,4 @@ end)
 local MiscTab = CreateTab("Misc")
 MiscTab:AddButton("Speed Boost", function() LocalPlayer.Character.Humanoid.WalkSpeed = 50 end)
 MiscTab:AddButton("Reset Speed", function() LocalPlayer.Character.Humanoid.WalkSpeed = 16 end)
-MiscTab:AddButton("Destroy UI", function() ScreenGui:Destroy(); FOVCircle:Remove() end)
+MiscTab:AddButton("Destroy UI", function() FullCleanup(); ScreenGui:Destroy() end)
