@@ -1,6 +1,6 @@
 --!strict
--- PURPLE.EXE | Universal Script Premium V5.0.0
--- MAX COMPATIBILITY | FIXED INPUTS | FULL LOGIC
+-- PURPLE.EXE | Universal Script Premium V5.1.0
+-- AUTO-ENABLED | RIGHT-CLICK AIMBOT | FULL LOGIC
 -- Created by Manus
 
 local Players = game:GetService("Players")
@@ -19,10 +19,10 @@ local function GetGuiParent()
 end
 local GuiParent = GetGuiParent()
 
--- [[ SETTINGS ]]
+-- [[ SETTINGS - ENABLED BY DEFAULT ]]
 local Settings = {
-    Aimbot = { Enabled = false, Smoothness = 0.15, FOV = 150, ShowFOV = true },
-    Visuals = { ESP = false, Tracers = false, Boxes = false, Names = false, NightMode = false, FieldOfView = 70 },
+    Aimbot = { Enabled = true, Smoothness = 0.15, FOV = 150, ShowFOV = true },
+    Visuals = { ESP = true, Tracers = true, Boxes = true, Names = true, NightMode = false, FieldOfView = 70 },
     Menu = { Visible = true, ToggleKey = Enum.KeyCode.Insert }
 }
 
@@ -75,6 +75,7 @@ end
 RunService.RenderStepped:Connect(function()
     if Settings.Aimbot.Enabled then
         local target = GetClosestPlayer()
+        -- HARD-LOCKED TO RIGHT CLICK (MouseButton2)
         if target and UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton2) then
             local targetPos = Camera:WorldToViewportPoint(target.Character.HumanoidRootPart.Position)
             local mousePos = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
@@ -177,7 +178,7 @@ SidebarCorner.Parent = Sidebar
 local Title = Instance.new("TextLabel")
 Title.Size = UDim2.new(1, 0, 0, 60)
 Title.BackgroundTransparency = 1
-Title.Text = "PURPLE.EXE | v5.0"
+Title.Text = "PURPLE.EXE | v5.1"
 Title.TextColor3 = Theme.Accent
 Title.TextSize = 18
 Title.Font = Theme.TitleFont
@@ -339,14 +340,14 @@ end
 
 -- [[ BUILD TABS ]]
 local AimbotTab = CreateTab("Aimbot")
-AimbotTab:AddToggle("Enable Aimbot", false, function(v) Settings.Aimbot.Enabled = v end)
+AimbotTab:AddToggle("Enable Aimbot", true, function(v) Settings.Aimbot.Enabled = v end)
 AimbotTab:AddToggle("Show FOV", true, function(v) Settings.Aimbot.ShowFOV = v end)
 
 local VisualsTab = CreateTab("Visuals")
-VisualsTab:AddToggle("Master ESP", false, function(v) Settings.Visuals.ESP = v end)
-VisualsTab:AddToggle("Boxes", false, function(v) Settings.Visuals.Boxes = v end)
-VisualsTab:AddToggle("Names", false, function(v) Settings.Visuals.Names = v end)
-VisualsTab:AddToggle("Tracers", false, function(v) Settings.Visuals.Tracers = v end)
+VisualsTab:AddToggle("Master ESP", true, function(v) Settings.Visuals.ESP = v end)
+VisualsTab:AddToggle("Boxes", true, function(v) Settings.Visuals.Boxes = v end)
+VisualsTab:AddToggle("Names", true, function(v) Settings.Visuals.Names = v end)
+VisualsTab:AddToggle("Tracers", true, function(v) Settings.Visuals.Tracers = v end)
 VisualsTab:AddToggle("Night Mode", false, function(v) 
     Settings.Visuals.NightMode = v
     if v then Lighting.Brightness = 0; Lighting.ClockTime = 0; Lighting.Ambient = Color3.new(0,0,0)
