@@ -206,7 +206,7 @@ function CustomLib:CreateWindow(title)
 end
 
 -- [[ EXECUTION ]]
-local Window = CustomLib:CreateWindow("PURPLE.EXE")
+local Window = CustomLib:CreateWindow("PURPLE.EXE | v4.2.0")
 local AimbotTab = Window:CreateTab("Aimbot")
 AimbotTab:AddToggle("Enable Aimbot", false, function(v) Settings.Aimbot.Enabled = v end)
 AimbotTab:AddToggle("Show FOV", true, function(v) Settings.Aimbot.ShowFOV = v end)
