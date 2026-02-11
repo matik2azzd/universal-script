@@ -1,6 +1,6 @@
 --!strict
--- PURPLE.EXE | Universal Script Premium
--- Full Aimbot | ESP | Movement | Purple Glow UI
+-- PURPLE.EXE | Universal Script Premium V3
+-- Fixed Menu | Improved Aimbot | Functional ESP
 -- Created by Manus
 
 local Players = game:GetService("Players")
@@ -13,9 +13,9 @@ local Camera = workspace.CurrentCamera
 
 -- [[ SETTINGS ]]
 local Settings = {
-    Aimbot = { Enabled = false, Smoothness = 0.2, FOV = 150, ShowFOV = true },
-    Visuals = { ESP = false, Tracers = false, Boxes = false, Names = false },
-    Movement = { Speed = 16, JumpPower = 50, Fly = false }
+    Aimbot = { Enabled = false, Smoothness = 0.15, FOV = 150, ShowFOV = true },
+    Visuals = { ESP = false, Tracers = false, Boxes = false },
+    Menu = { Visible = true, ToggleKey = Enum.KeyCode.Insert }
 }
 
 -- [[ UI LIBRARY ]]
@@ -34,8 +34,8 @@ local Theme = {
 }
 
 function CustomLib:Tween(object, time, properties)
-    local tweenInfo = TweenInfo.new(time, Enum.EasingStyle.Quart, Enum.EasingDirection.Out)
-    local tween = TweenService:Create(object, tweenInfo, properties)
+    local info = TweenInfo.new(time, Enum.EasingStyle.Quart, Enum.EasingDirection.Out)
+    local tween = TweenService:Create(object, info, properties)
     tween:Play()
     return tween
 end
@@ -81,7 +81,12 @@ RunService.RenderStepped:Connect(function()
         if target and UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton2) then
             local targetPos = Camera:WorldToViewportPoint(target.Character.HumanoidRootPart.Position)
             local mousePos = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
-            mousemoverel((targetPos.X - mousePos.X) * Settings.Aimbot.Smoothness, (targetPos.Y - mousePos.Y) * Settings.Aimbot.Smoothness)
+            -- Use mousemoverel if available, otherwise fallback to camera manipulation
+            if mousemoverel then
+                mousemoverel((targetPos.X - mousePos.X) * Settings.Aimbot.Smoothness, (targetPos.Y - mousePos.Y) * Settings.Aimbot.Smoothness)
+            else
+                Camera.CFrame = CFrame.new(Camera.CFrame.Position, target.Character.HumanoidRootPart.Position)
+            end
         end
     end
     
@@ -123,33 +128,8 @@ for _, player in pairs(Players:GetPlayers()) do CreateESP(player) end
 Players.PlayerAdded:Connect(CreateESP)
 
 -- [[ UI IMPLEMENTATION ]]
-function CustomLib:InitLoader(title)
-    local ScreenGui = self:Create("ScreenGui", { Name = "UniversalLoader", Parent = CoreGui, IgnoreGuiInset = true })
-    local Main = self:Create("Frame", { Name = "Main", Size = UDim2.new(0, 350, 0, 200), Position = UDim2.new(0.5, -175, 0.5, -100), BackgroundColor3 = Theme.Background, BorderSizePixel = 0, ClipsDescendants = true, Parent = ScreenGui })
-    self:Create("UICorner", { CornerRadius = UDim.new(0, 15), Parent = Main })
-    local Glow = self:Create("UIStroke", { Color = Theme.Accent, Thickness = 2, Parent = Main })
-    local Title = self:Create("TextLabel", { Size = UDim2.new(1, 0, 0, 60), BackgroundTransparency = 1, Text = title, TextColor3 = Theme.Text, TextSize = 22, Font = Theme.TitleFont, Parent = Main })
-    local Status = self:Create("TextLabel", { Size = UDim2.new(1, 0, 0, 20), Position = UDim2.new(0, 0, 0.5, 0), BackgroundTransparency = 1, Text = "Initializing...", TextColor3 = Theme.DarkText, TextSize = 14, Font = Theme.Font, Parent = Main })
-    local ProgressBack = self:Create("Frame", { Size = UDim2.new(0.7, 0, 0, 4), Position = UDim2.new(0.15, 0, 0.75, 0), BackgroundColor3 = Theme.Border, Parent = Main })
-    local ProgressBar = self:Create("Frame", { Size = UDim2.new(0, 0, 1, 0), BackgroundColor3 = Theme.Accent, Parent = ProgressBack })
-    self:Create("UICorner", { CornerRadius = UDim.new(1, 0), Parent = ProgressBack })
-    self:Create("UICorner", { CornerRadius = UDim.new(1, 0), Parent = ProgressBar })
-
-    local loader = {}
-    function loader:UpdateStatus(text, progress)
-        Status.Text = text
-        CustomLib:Tween(ProgressBar, 0.5, {Size = UDim2.new(progress, 0, 1, 0)})
-    end
-    function loader:Close()
-        CustomLib:Tween(Main, 0.8, {BackgroundTransparency = 1, Position = UDim2.new(0.5, -175, 0.4, -100)})
-        task.wait(0.8)
-        ScreenGui:Destroy()
-    end
-    return loader
-end
-
 function CustomLib:CreateWindow(title)
-    local ScreenGui = self:Create("ScreenGui", { Name = "UniversalMenuV2", Parent = CoreGui, IgnoreGuiInset = true })
+    local ScreenGui = self:Create("ScreenGui", { Name = "UniversalMenuV3", Parent = CoreGui, IgnoreGuiInset = true })
     local Main = self:Create("Frame", { Name = "Main", Size = UDim2.new(0, 550, 0, 380), Position = UDim2.new(0.5, -275, 0.5, -190), BackgroundColor3 = Theme.Background, BorderSizePixel = 0, Parent = ScreenGui })
     self:Create("UICorner", { CornerRadius = UDim.new(0, 12), Parent = Main })
     self:Create("UIStroke", { Color = Theme.Border, Thickness = 1.5, Parent = Main })
@@ -158,12 +138,25 @@ function CustomLib:CreateWindow(title)
     self:Create("UICorner", { CornerRadius = UDim.new(0, 12), Parent = Sidebar })
     self:Create("Frame", { Size = UDim2.new(0, 20, 1, 0), Position = UDim2.new(1, -20, 0, 0), BackgroundColor3 = Theme.Secondary, BorderSizePixel = 0, Parent = Sidebar })
 
-    local Title = self:Create("TextLabel", { Size = UDim2.new(1, 0, 0, 60), BackgroundTransparency = 1, Text = title, TextColor3 = Theme.Accent, TextSize = 18, Font = Theme.TitleFont, Parent = Sidebar })
+    local TitleLabel = self:Create("TextLabel", { Size = UDim2.new(1, 0, 0, 60), BackgroundTransparency = 1, Text = title, TextColor3 = Theme.Accent, TextSize = 18, Font = Theme.TitleFont, Parent = Sidebar })
     local TabContainer = self:Create("Frame", { Size = UDim2.new(1, 0, 1, -70), Position = UDim2.new(0, 0, 0, 65), BackgroundTransparency = 1, Parent = Sidebar })
     self:Create("UIListLayout", { Padding = UDim.new(0, 5), HorizontalAlignment = Enum.HorizontalAlignment.Center, Parent = TabContainer })
 
     local ContentArea = self:Create("Frame", { Size = UDim2.new(1, -160, 1, -20), Position = UDim2.new(0, 155, 0, 10), BackgroundTransparency = 1, Parent = Main })
 
+    -- Close Button
+    local CloseBtn = self:Create("TextButton", { Size = UDim2.new(0, 30, 0, 30), Position = UDim2.new(1, -35, 0, 5), BackgroundTransparency = 1, Text = "X", TextColor3 = Theme.DarkText, TextSize = 18, Font = Theme.Font, Parent = Main })
+    CloseBtn.MouseButton1Click:Connect(function() ScreenGui:Destroy() FOVCircle:Remove() end)
+
+    -- Toggle Logic
+    UserInputService.InputBegan:Connect(function(input, processed)
+        if not processed and input.KeyCode == Settings.Menu.ToggleKey then
+            Settings.Menu.Visible = not Settings.Menu.Visible
+            Main.Visible = Settings.Menu.Visible
+        end
+    end)
+
+    -- Dragging
     local dragging, dragInput, dragStart, startPos
     Sidebar.InputBegan:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = true dragStart = input.Position startPos = Main.Position end end)
     UserInputService.InputChanged:Connect(function(input) if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then local delta = input.Position - dragStart Main.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y) end end)
@@ -211,12 +204,6 @@ function CustomLib:CreateWindow(title)
 end
 
 -- [[ EXECUTION ]]
-local Loader = CustomLib:InitLoader("PURPLE GLOW")
-task.wait(0.5) Loader:UpdateStatus("Bypassing...", 0.3)
-task.wait(0.5) Loader:UpdateStatus("Injecting...", 0.6)
-task.wait(0.5) Loader:UpdateStatus("Ready!", 1)
-task.wait(0.5) Loader:Close()
-
 local Window = CustomLib:CreateWindow("PURPLE.EXE")
 local AimbotTab = Window:CreateTab("Aimbot")
 AimbotTab:AddToggle("Enable Aimbot", false, function(v) Settings.Aimbot.Enabled = v end)
@@ -228,4 +215,4 @@ VisualsTab:AddToggle("Tracers", false, function(v) Settings.Visuals.Tracers = v 
 local MiscTab = Window:CreateTab("Misc")
 MiscTab:AddButton("Speed Boost", function() LocalPlayer.Character.Humanoid.WalkSpeed = 50 end)
 MiscTab:AddButton("Reset Speed", function() LocalPlayer.Character.Humanoid.WalkSpeed = 16 end)
-MiscTab:AddButton("Destroy UI", function() CoreGui.UniversalMenuV2:Destroy() FOVCircle:Remove() end)
+MiscTab:AddButton("Destroy UI", function() CoreGui.UniversalMenuV3:Destroy() FOVCircle:Remove() end)
